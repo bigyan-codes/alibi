@@ -74,3 +74,7 @@ during the single inference call. Precision matters here.
 ## License
 
 MIT
+
+## Status
+
+v1 smoke-test build for the QVAC hackathon.
