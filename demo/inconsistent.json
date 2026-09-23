@@ -1,0 +1,6 @@
+[
+  { "time": "14:02", "type": "file-edit", "detail": "notes.md modified" },
+  { "time": "14:20", "type": "screen", "detail": "idle" },
+  { "time": "15:15", "type": "screen", "detail": "active" },
+  { "time": "15:55", "type": "file-edit", "detail": "alibi.js modified" }
+]
