@@ -1,3 +1,4 @@
+// Alibi — on-device plausibility auditor. See README.md for usage.
 // alibi.js — the main CLI.
 
 import { loadModel, LLAMA_3_2_1B_INST_Q4_0, completion, unloadModel } from '@qvac/sdk';
