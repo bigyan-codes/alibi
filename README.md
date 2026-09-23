@@ -25,7 +25,7 @@ machine, and the evidence is discarded immediately after.
 
 ## Install
 
-    git clone <your repo URL>
+    git clone https://github.com/bigyan-codes/alibi.git
     cd alibi
     npm install
 
