@@ -25,16 +25,20 @@ machine, and the evidence is discarded immediately after.
 
 ## Install
 
-    git clone https://github.com/bigyan-codes/alibi.git
-    cd alibi
-    npm install
+```bash
+git clone https://github.com/bigyan-codes/alibi.git
+cd alibi
+npm install
+```
 
 ## Run
 
 Try the built-in demos (no JSON to type):
 
-    node alibi.js --demo=consistent
-    node alibi.js --demo=inconsistent
+```bash
+node alibi.js --demo=consistent
+node alibi.js --demo=inconsistent
+```
 
 Or pipe in your own timeline:
 
@@ -81,8 +85,10 @@ v1 smoke-test build for the QVAC hackathon.
 
 ## Run as a Web App
 
-    npm install
-    npm start
+```bash
+npm install
+npm start
+```
 
 Then open http://localhost:3000 in your browser.
 
