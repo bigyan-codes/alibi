@@ -60,6 +60,7 @@ export function computeGaps(claim, signals) {
 export function judgeFromSignals(claim, signals) {
   const times = claim.match(/\b(\d{1,2}):(\d{2})\b/g) || [];
   if (times.length < 2) return 'UNCERTAIN';
+  if (signals.length < 3) return 'UNCERTAIN';
 
   const start = toMinutes(times[0]);
   const end = toMinutes(times[1]);

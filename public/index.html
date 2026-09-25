@@ -77,6 +77,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
       <button class="primary" id="auditBtn" onclick="runAudit()">Audit Claim</button>
       <button class="secondary" onclick="loadDemo('consistent')">Load True Demo</button>
       <button class="secondary" onclick="loadDemo('inconsistent')">Load False Demo</button>
+      <button class="secondary" onclick="loadDemo('ambiguous')">Load Ambiguous Demo</button>
     </div>
   </div>
 
@@ -101,6 +102,12 @@ const demos = {
       { time: '14:20', type: 'screen', detail: 'idle' },
       { time: '15:15', type: 'screen', detail: 'active' },
       { time: '15:55', type: 'file-edit', detail: 'alibi.js modified' }
+    ]
+  },
+  ambiguous: {
+    claim: 'I was working between 14:00 and 16:00',
+    signals: [
+      { time: '15:45', type: 'input', detail: 'brief typing' }
     ]
   }
 };
