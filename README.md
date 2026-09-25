@@ -85,8 +85,15 @@ v1 smoke-test build for the QVAC hackathon.
 
 ## Run as a Web App
 
+First time only:
+
 ```bash
 npm install
+```
+
+Then every time you want to run it:
+
+```bash
 npm start
 ```
 
