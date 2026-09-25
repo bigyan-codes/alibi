@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alibi — On-Device Plausibility Auditor</title>
+<style>
+:root {
+  --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --text-muted: #94a3b8;
+  --accent: #38bdf8; --green: #22c55e; --red: #ef4444; --yellow: #eab308;
+  --border: #334155;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+}
+.container { width: 100%; max-width: 800px; }
+h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+.subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+}
+label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+input[type="text"], textarea {
+  width: 100%; padding: 0.75rem; border-radius: 8px;
+  border: 1px solid var(--border); background: #0f172a; color: var(--text);
+  font-family: inherit; font-size: 0.95rem;
+}
+textarea { min-height: 160px; resize: vertical; font-family: monospace; }
+.buttons { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+button {
+  padding: 0.75rem 1.5rem; border-radius: 8px; border: none;
+  font-weight: 600; cursor: pointer; transition: all 0.15s;
+  font-size: 0.95rem;
+}
+button.primary { background: var(--accent); color: #0f172a; }
+button.primary:hover { filter: brightness(1.1); }
+button.secondary { background: var(--border); color: var(--text); }
+button.secondary:hover { background: #475569; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.result {
+  margin-top: 1.5rem; padding: 1.5rem; border-radius: 12px;
+  border-left: 6px solid var(--border); animation: fadeIn 0.3s;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.result.consistent { border-left-color: var(--green); }
+.result.inconsistent { border-left-color: var(--red); }
+.result.uncertain { border-left-color: var(--yellow); }
+.verdict-label { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+.verdict-consistent { color: var(--green); }
+.verdict-inconsistent { color: var(--red); }
+.verdict-uncertain { color: var(--yellow); }
+.result-row { margin: 0.5rem 0; color: var(--text-muted); }
+.result-row strong { color: var(--text); }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #0f172a; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error { color: var(--red); margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔒 Alibi</h1>
+  <p class="subtitle">An on-device witness that watches nothing. Forensics with instant amnesia.</p>
+
+  <div class="card">
+    <label for="claim">Your Claim</label>
+    <input type="text" id="claim" placeholder="e.g., I was working on code between 14:00 and 16:00">
+
+    <label for="signals" style="margin-top: 1rem;">Timeline of Device Signals (JSON)</label>
+    <textarea id="signals" placeholder='[{"time":"14:02","type":"file-edit","detail":"alibi.js modified"}]'></textarea>
+
+    <div class="buttons">
+      <button class="primary" id="auditBtn" onclick="runAudit()">Audit Claim</button>
+      <button class="secondary" onclick="loadDemo('consistent')">Load True Demo</button>
+      <button class="secondary" onclick="loadDemo('inconsistent')">Load False Demo</button>
+    </div>
+  </div>
+
+  <div id="output"></div>
+</div>
+<script>
+const demos = {
+  consistent: {
+    claim: 'I was working on code between 14:00 and 16:00',
+    signals: [
+      { time: '14:02', type: 'file-edit', detail: 'alibi.js modified' },
+      { time: '14:18', type: 'input', detail: 'keyboard activity' },
+      { time: '14:40', type: 'file-edit', detail: 'auditor.js modified' },
+      { time: '15:12', type: 'screen', detail: 'active' },
+      { time: '15:55', type: 'file-edit', detail: 'alibi.js modified' }
+    ]
+  },
+  inconsistent: {
+    claim: 'I was on a client call from 14:00 to 15:00',
+    signals: [
+      { time: '14:02', type: 'file-edit', detail: 'notes.md modified' },
+      { time: '14:20', type: 'screen', detail: 'idle' },
+      { time: '15:15', type: 'screen', detail: 'active' },
+      { time: '15:55', type: 'file-edit', detail: 'alibi.js modified' }
+    ]
+  }
+};
+
+function loadDemo(name) {
+  const d = demos[name];
+  document.getElementById('claim').value = d.claim;
+  document.getElementById('signals').value = JSON.stringify(d.signals, null, 2);
+}
+
+async function runAudit() {
+  const claim = document.getElementById('claim').value.trim();
+  const signalsRaw = document.getElementById('signals').value.trim();
+  const btn = document.getElementById('auditBtn');
+  const output = document.getElementById('output');
+
+  if (!claim || !signalsRaw) {
+    output.innerHTML = '<p class="error">Please fill in both the claim and the timeline.</p>';
+    return;
+  }
+
+  let signals;
+  try { signals = JSON.parse(signalsRaw); }
+  catch (e) {
+    output.innerHTML = '<p class="error">Timeline is not valid JSON: ' + e.message + '</p>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Auditing...';
+  output.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claim, signals })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+    renderResult(data, claim);
+  } catch (err) {
+    output.innerHTML = '<p class="error">' + err.message + '</p>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Audit Claim';
+  }
+}
+
+function renderResult(data, claim) {
+  const cls = data.verdict.toLowerCase();
+  document.getElementById('output').innerHTML =
+    '<div class="result ' + cls + '">' +
+      '<div class="verdict-label verdict-' + cls + '">VERDICT: ' + data.verdict + '</div>' +
+      '<div class="result-row"><strong>Claim:</strong> ' + claim + '</div>' +
+      '<div class="result-row"><strong>Evidence:</strong> ' + data.evidence + '</div>' +
+      '<div class="result-row"><strong>Gaps:</strong> ' + data.gaps + '</div>' +
+    '</div>';
+}
+</script>
+</body>
+</html>

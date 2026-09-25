@@ -78,3 +78,18 @@ MIT
 ## Status
 
 v1 smoke-test build for the QVAC hackathon.
+
+## Run as a Web App
+
+    npm install
+    npm start
+
+Then open http://localhost:3000 in your browser.
+
+The UI has two inputs: a claim, and a timeline of device signals (JSON).
+Click "Load True Demo" or "Load False Demo" to auto-fill examples, then
+click "Audit Claim" to see the verdict.
+
+The verdict is computed deterministically in code. The on-device LLM
+writes a one-sentence summary of the evidence. Inference runs locally
+via the QVAC SDK; the browser only talks to your own localhost server.
